@@ -1,0 +1,9 @@
+# Segredos - NUNCA subir isso pro GitHub
+.env
+
+# Ambiente virtual Python
+.venv/
+
+# Cache Python
+__pycache__/
+*.pyc
