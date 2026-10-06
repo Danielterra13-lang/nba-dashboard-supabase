@@ -3,7 +3,7 @@
 Painel interativo com estatísticas de todos os jogadores da NBA na temporada 2025-26, filtrável por time, com identidade visual que se adapta automaticamente às cores oficiais de cada franquia (indicadores, gráficos e até o fundo da página).
 
 **Dashboard ao vivo:** https://danielterra13-lang.github.io/nba-dashboard-supabase/
-<img width="1885" height="905" alt="image" src="https://github.com/user-attachments/assets/c7ca47f6-7540-4319-b3a5-7a4798523d2a" />
+![Dashboard filtrado pelo Boston Celtics, com KPIs, elenco, top 10 por pontos, quadra com pontos por tipo de cesta e eficiência vs. uso](assets/dashboard-celtics.png)
 
 
 ## Por que esse projeto
