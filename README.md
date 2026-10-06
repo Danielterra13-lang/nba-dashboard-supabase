@@ -1,6 +1,6 @@
 # NBA Dashboard — Temporada 2025-26
 
-Painel interativo com estatísticas de todos os jogadores da NBA na temporada 2025-26, filtrável por time, com identidade visual que se adapta automaticamente às cores oficiais de cada franquia.
+Painel interativo com estatísticas de todos os jogadores da NBA na temporada 2025-26, filtrável por time, com identidade visual que se adapta automaticamente às cores oficiais de cada franquia (indicadores, gráficos e até o fundo da página).
 
 **Dashboard ao vivo:** https://danielterra13-lang.github.io/nba-dashboard-supabase/
 <img width="1885" height="905" alt="image" src="https://github.com/user-attachments/assets/c7ca47f6-7540-4319-b3a5-7a4798523d2a" />
@@ -42,7 +42,7 @@ Esquema estrela simples:
 
 - `dim_players`: dados biográficos (altura, peso, college, país, draft)
 - `dim_teams`: os 30 times
-- `fact_player_stats`: estatísticas por jogador, por temporada, por time (grão pensado pra suportar trade no meio da temporada)
+- `fact_player_stats`: estatísticas por jogador, por temporada, por time (grão pensado pra suportar trade no meio da temporada), incluindo a quebra de pontos por tipo de cesta (`pts_2pt`, `pts_3pt`, `pts_ft`)
 - `vw_player_stats`: view que já entrega tudo junto, pra o front-end não precisar fazer join client-side
 
 O campo `season` está na tabela de fatos mesmo só existindo uma temporada carregada até agora. Isso é intencional: adicionar uma nova temporada no futuro é rodar a coleta de novo, não redesenhar o banco.
@@ -53,6 +53,8 @@ O campo `season` está na tabela de fatos mesmo só existindo uma temporada carr
 - **Escudos dos times via hotlink (CDN da ESPN), não hospedados no repositório.** Mantém o projeto leve, mas cria uma dependência de terceiro: se a ESPN reorganizar essas URLs, os escudos somem. Pra um portfólio pessoal, aceitável. Pra produção, eu hospedaria os assets.
 - **Logo da NBA embutido em base64 direto no HTML**, ao contrário dos escudos dos times. Diferença de critério: não achei uma URL pública estável pra esse logo específico (a maioria dos resultados de busca eram sites de marketplace de logo, não CDNs confiáveis), então preferi eliminar a dependência externa completamente nesse caso.
 - **Front-end consulta o Supabase direto, sem backend intermediário.** Só é seguro porque a chave usada no navegador é a `publishable` (antiga `anon`), que só tem permissão de leitura via Row Level Security. A chave com permissão de escrita nunca sai do ambiente local.
+- **Fundo por time via `color-mix()` em CSS, com uma exceção hardcoded pro Brooklyn Nets.** A fórmula genérica mistura a cor secundária da franquia com branco pra gerar o tom de fundo — funciona pra 29 times. O Nets quebra a regra porque a cor secundária dele é branco/cinza, então a mistura não gera contraste nenhum. Resolvido com um tema escuro específico pro time, via `data-team="BKN"` no CSS e uma exceção no JS (inline style sempre vence seletor de atributo, então a troca de cor do indicador precisou ser tratada em JS, não só em CSS).
+- **Gráfico de quadra mostra volume real, não posição real de arremesso.** A API não retorna coordenada de onde a cesta foi feita, só o total de pontos por tipo (2PT/3PT/lance livre). Em vez de simular posições (o que seria inventar dado), o gráfico mostra duas zonas fixas — garrafão e área externa ao arco — com a opacidade variando conforme o peso de cada tipo no total. É uma simplificação assumida, não um mapa de calor de arremessos.
 
 ## Desafios reais (e o que aprendi com eles)
 
@@ -60,6 +62,7 @@ O campo `season` está na tabela de fatos mesmo só existindo uma temporada carr
 - **A API devolve altura como texto, não número.** O campo `player_height` vem formatado tipo `"6-6"` (pés-polegadas), o que quebra ao tentar salvar num campo numérico do banco. A correção foi usar o campo irmão `player_height_inches`, que vem numérico, e converter pra centímetros.
 - **`NaN` não é JSON válido.** Jogadores sem alguma estatística registrada geram `NaN` no pandas, que o `httpx` recusa serializar (`ValueError: Out of range float values are not JSON compliant`). Resolvido com uma segunda passada de limpeza explícita antes do envio.
 - **Nomenclatura de chaves do Supabase mudou em 2026.** O painel agora usa `publishable`/`secret` no lugar de `anon`/`service_role`. Funcionalmente equivalentes, mas a documentação e capturas de tela antigas ainda usam os nomes antigos, o que gerou confusão na hora de achar a chave certa.
+- **Postgres não deixa inserir coluna no meio de uma view existente.** Ao adicionar `pts_2pt`/`pts_3pt`/`pts_ft`, a primeira tentativa de `CREATE OR REPLACE VIEW` colocava as colunas novas no meio da lista de `SELECT` — e o Postgres recusa isso (`42P16: cannot change name of view column`), porque `CREATE OR REPLACE VIEW` só permite *acrescentar* colunas no final. Resolvido reordenando a view pra acrescentar as colunas novas ao final da lista.
 
 ## Como rodar localmente
 
