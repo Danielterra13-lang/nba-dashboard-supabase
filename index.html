@@ -17,13 +17,26 @@
   :root{
     --primary:#007A33;
     --secondary:#BA9653;
-    --bg:#F4F5F3;
+    /* Fundo e hover derivados da cor do time (trocam sozinhos quando
+       --secondary muda, sem precisar de tabela por time) */
+    --bg:color-mix(in srgb, var(--secondary) 26%, white);
     --surface:#FFFFFF;
-    --surface-2:#EEF0EC;
-    --line:#E1E4DE;
+    --surface-2:color-mix(in srgb, var(--secondary) 16%, white);
+    --line:color-mix(in srgb, var(--secondary) 32%, white);
     --text:#1A1F1B;
     --muted:#6E756E;
     --radius:10px;
+  }
+
+  /* Nets: preto/branco puros fazem a derivação acima sumir (branco sobre
+     branco). Único time com esse problema na liga, então troca pra um
+     tema escuro só pra ele, em vez de inventar regra genérica demais. */
+  :root[data-team="BKN"]{
+    --bg:#0A0A0A;
+    --surface:#15151A;
+    --surface-2:#1E1E22;
+    --line:#2C2C30;
+    --text:#F2F0E6;
   }
 
   *{box-sizing:border-box;}
@@ -285,9 +298,16 @@ async function fetchData() {
 }
 
 function applyTeamTheme(abbr) {
-  const colors = abbr ? (TEAM_COLORS[abbr] || NBA_COLORS) : NBA_COLORS;
-  document.documentElement.style.setProperty("--primary", colors[0]);
-  document.documentElement.style.setProperty("--secondary", colors[1]);
+  let [primaryColor, secondaryColor] = abbr ? (TEAM_COLORS[abbr] || NBA_COLORS) : NBA_COLORS;
+  if (abbr === "BKN") {
+    // Fundo escuro (ver regra CSS [data-team="BKN"]) pede acento claro,
+    // não o preto que o Nets normalmente usa como cor primária.
+    primaryColor = "#FFFFFF";
+    secondaryColor = "#9A9A9A";
+  }
+  document.documentElement.style.setProperty("--primary", primaryColor);
+  document.documentElement.style.setProperty("--secondary", secondaryColor);
+  document.documentElement.dataset.team = abbr || "";
   const badge = document.getElementById("teamBadge");
   badge.src = abbr ? (TEAM_LOGOS[abbr] || NBA_LOGO_PATH) : NBA_LOGO_PATH;
   badge.alt = abbr || "NBA";
@@ -355,9 +375,9 @@ function renderCharts(rows) {
 
   Plotly.newPlot("chartTopScorers", [{
     type: "bar", orientation: "h",
-    x: top.map(r => r.pts), y: top.map(r => r.player_name),
+    x: top.map(r => r.pts), y: top.map(r => r.player_name + "   "), // espaços = respiro entre nome e barra
     marker: { color: primary },
-  }], { ...layoutBase, margin: { t: 10, r: 20, l: 140, b: 40 } }, { displayModeBar: false, responsive: true });
+  }], { ...layoutBase, margin: { t: 10, r: 20, l: 150, b: 40 } }, { displayModeBar: false, responsive: true });
 
   Plotly.newPlot("chartScatter", [{
     type: "scatter", mode: "markers",
