@@ -140,6 +140,21 @@
     border-left:3px solid var(--primary); padding-left:10px;
   }
 
+  .grid-2-even{grid-template-columns:1fr 1fr;}
+
+  .court-chart{display:flex; flex-direction:column; align-items:center; gap:12px;}
+  .court-svg{width:100%; max-width:360px; height:auto;}
+  #courtThree{fill:var(--secondary); fill-opacity:.35; transition:fill-opacity .3s ease;}
+  #courtTwo{fill:var(--primary); fill-opacity:.55; transition:fill-opacity .3s ease;}
+  .court-legend{display:flex; gap:18px; flex-wrap:wrap; justify-content:center; font-size:13px; color:var(--text);}
+  .court-legend .chip{display:flex; align-items:center; gap:6px;}
+  .court-legend .chip::before{
+    content:""; width:10px; height:10px; border-radius:50%;
+    background:var(--dot, var(--muted)); display:inline-block;
+  }
+  .court-legend b{font-family:'Oswald',sans-serif; font-size:16px;}
+  .court-note{font-size:11.5px; color:var(--muted); text-align:center; max-width:400px; margin:0; line-height:1.4;}
+
   table{width:100%; border-collapse:collapse; font-size:13px;}
   thead th{
     text-align:left; color:var(--muted); font-weight:600;
@@ -213,9 +228,40 @@
     </div>
   </div>
 
-  <div class="panel">
-    <h2>Eficiência (TS%) vs. Uso (USG%) — tamanho da bolha = pontos</h2>
-    <div id="chartScatter"></div>
+  <div class="grid-2 grid-2-even">
+    <div class="panel court-panel">
+      <h2>Pontos por tipo de cesta — quadra (simplificada)</h2>
+      <div class="court-chart">
+        <svg viewBox="0 0 500 460" class="court-svg" role="img" aria-label="Quadra de basquete com garrafão e área de 3 pontos coloridos por volume de pontos">
+          <rect id="courtThree" x="10" y="10" width="480" height="430" rx="4"></rect>
+          <path id="courtTwo" d="M30,440 L30,298 A237.5,237.5 0 0 1 470,298 L470,440 Z"></path>
+
+          <g fill="none" stroke="var(--line)" stroke-width="2">
+            <rect x="10" y="10" width="480" height="430" rx="4"></rect>
+            <rect x="170" y="250" width="160" height="190"></rect>
+            <circle cx="250" cy="250" r="60"></circle>
+            <path d="M30,440 L30,298 A237.5,237.5 0 0 1 470,298 L470,440"></path>
+            <rect x="220" y="382" width="60" height="6"></rect>
+            <circle cx="250" cy="396" r="7.5"></circle>
+          </g>
+        </svg>
+        <div class="court-legend">
+          <span class="chip" style="--dot:var(--primary)"><b id="courtTwoLabel">—</b>&nbsp;2PT</span>
+          <span class="chip" style="--dot:var(--secondary)"><b id="courtThreeLabel">—</b>&nbsp;3PT</span>
+          <span class="chip"><b id="courtFtLabel">—</b>&nbsp;Lance livre</span>
+        </div>
+        <p class="court-note">
+          Simplificado: garrafão = pontos de cesta de 2, área fora do arco = pontos de cesta de 3.
+          A opacidade de cada zona reflete o peso dela no total. Lance livre não tem posição na
+          quadra, por isso aparece só como número ao lado.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Eficiência (TS%) vs. Uso (USG%) — tamanho da bolha = pontos</h2>
+      <div id="chartScatter"></div>
+    </div>
   </div>
 
 </main>
@@ -394,6 +440,29 @@ function renderCharts(rows) {
     xaxis: { title: "USG%", tickformat: ".0%", gridcolor: "#00000014", zerolinecolor: "#00000022" },
     yaxis: { title: "TS%", tickformat: ".0%", gridcolor: "#00000014", zerolinecolor: "#00000022" },
   }, { displayModeBar: false, responsive: true });
+
+  renderCourtChart(rows, primary, secondary);
+}
+
+function renderCourtChart(rows, primary, secondary) {
+  const sum = key => rows.reduce((s, r) => s + (Number(r[key]) || 0), 0);
+  const pts2 = sum("pts_2pt");
+  const pts3 = sum("pts_3pt");
+  const ptsFt = sum("pts_ft");
+  const base = pts2 + pts3; // base de comparação entre as duas zonas da quadra
+  const share2 = base ? pts2 / base : 0.5;
+  const share3 = base ? pts3 / base : 0.5;
+
+  const courtTwo = document.getElementById("courtTwo");
+  const courtThree = document.getElementById("courtThree");
+  courtTwo.style.fill = primary;
+  courtThree.style.fill = secondary;
+  courtTwo.style.fillOpacity = (0.2 + share2 * 0.7).toFixed(2);
+  courtThree.style.fillOpacity = (0.2 + share3 * 0.7).toFixed(2);
+
+  document.getElementById("courtTwoLabel").textContent = base ? `${fmt(pts2)} pts` : "—";
+  document.getElementById("courtThreeLabel").textContent = base ? `${fmt(pts3)} pts` : "—";
+  document.getElementById("courtFtLabel").textContent = ptsFt ? `${fmt(ptsFt)} pts` : "—";
 }
 
 function renderAll() {

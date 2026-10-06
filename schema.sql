@@ -42,6 +42,9 @@ create table if not exists fact_player_stats (
     usg_pct      numeric,
     ts_pct       numeric,
     ast_pct      numeric,
+    pts_2pt      numeric,   -- pontos/jogo vindos de cesta de 2 (FGM-FG3M)*2, endpoint leaguedashplayerstats
+    pts_3pt      numeric,   -- pontos/jogo vindos de cesta de 3 (FG3M*3)
+    pts_ft       numeric,   -- pontos/jogo vindos de lance livre (FTM)
     primary key (player_id, team_id, season)
 );
 
@@ -74,7 +77,10 @@ select
     f.dreb_pct,
     f.usg_pct,
     f.ts_pct,
-    f.ast_pct
+    f.ast_pct,
+    f.pts_2pt,
+    f.pts_3pt,
+    f.pts_ft
 from fact_player_stats f
 join dim_players p on p.player_id = f.player_id
 join dim_teams   t on t.team_id   = f.team_id;
